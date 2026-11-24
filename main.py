@@ -32,11 +32,13 @@ def main() -> None:
     # (0644) no matter what umask the sandbox runs with, since make.fun
     # collects the outputs as another user than the one the program runs as.
     os.chmod(path, 0o644)
-    # Read-back check: the file on disk must hold exactly the approved
-    # text, byte for byte; otherwise fail loudly, never silently.
-    with open(path, "r", encoding="utf-8", newline="\n") as f:
-        written = f.read()
-    if written != TEXT:
+    # Read-back check: the bytes on disk must hold exactly the approved
+    # text, byte for byte; otherwise fail loudly, never silently. The
+    # comparison is on bytes, not decoded text, so a sandbox that mangles
+    # the encoding cannot pass silently.
+    with open(path, "rb") as f:
+        written_bytes = f.read()
+    if written_bytes != TEXT.encode("utf-8"):
         raise SystemExit("entry.txt does not match the approved text")
 
 
